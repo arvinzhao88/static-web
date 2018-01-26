@@ -1,4 +1,4 @@
-FROM microsoft/iis
+FROM microsoft/iis:nanoserver
 
 RUN mkdir C:\site
 
