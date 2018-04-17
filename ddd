@@ -1,0 +1,36 @@
+node{
+    stage('git clone'){
+        //check CODE
+        git credentialsId: 'ba80cc36-77b1-42d0-8838-f834de346fe1', url: 'http://47.104.182.1:1080/wanshaoyuan/front-end.git'
+
+    }
+    stage('build'){
+        sh '''
+              echo $BUILD_ID
+              GROUP=gcr.io/library COMMIT=$BUILD_ID ./scripts/build.sh'''
+    }
+    stage('test'){
+        sh '''sudo docker run -itd --name front-end gcr.io/library/front-end:$BUILD_ID
+        sudo docker ps -a|grep front-end|grep Up
+        if [ $? -eq 0 ];then
+            echo "Success!"
+            sudo docker rm -f front-end
+        else
+            sudo docke rm -f front-end
+            exit 1
+        fi
+        
+        '''
+    }
+    stage('upload'){
+        sh '''sudo docker login gcr.io -u=admin -p=4435448Wsy
+        sudo docker push gcr.io/library/front-end:$BUILD_ID'''
+
+    }
+     stage('deploy'){
+        //执行部署脚本
+       sh 'sudo sed -i "s/gcr.io\\/library\\/front-end:.*/gcr.io\\/library\\/front-end:$BUILD_ID/g" /var/lib/jenkins/workspace/Sock_Shop/deploy/kubernetes/complete-demo.yaml'
+       sh 'kubectl apply -f /var/lib/jenkins/workspace/Sock_Shop/deploy/kubernetes/complete-demo.yaml --kubeconfig=/home/jenkins/.kube/config'
+        
+    }
+}
